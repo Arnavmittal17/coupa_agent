@@ -5,7 +5,7 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
-from tools import generate_chart
+from tools import generate_chart, send_resend_email
 
 def get_agent():
     # Check if OPENAI_API_KEY is set
@@ -25,6 +25,7 @@ def get_agent():
     tools = toolkit.get_tools()
     # Add custom plotting tool to visualize SQL results
     tools.append(generate_chart)
+    tools.append(send_resend_email)
     
     # Define a system prompt that guides the LLM
     now = datetime.now(timezone.utc)
@@ -65,6 +66,20 @@ def get_agent():
        - title: a clear, descriptive title
     4. Do NOT send raw data without specifying chart_type and columns.
     5. Keep the SQL result set small (use LIMIT, GROUP BY, aggregations).
+    
+    EMAIL PROTOCOL (HUMAN-IN-THE-LOOP — STRICT):
+    When the user asks to send an email or notify someone:
+    1. First, query the database if you need any data for the email content.
+    2. Draft the email yourself — compose a clear subject and professional body.
+    3. Present the FULL draft to the user, formatted as:
+       **To:** recipient@example.com
+       **Subject:** ...
+       **Body:**
+       ...
+    4. STOP and ask: "Would you like me to send this email, or would you like to make changes?"
+    5. WAIT for the user's explicit approval (e.g. "send it", "approved", "yes", "looks good").
+    6. Only AFTER approval, call the send_resend_email tool with to_email, subject, and body.
+    7. NEVER call send_resend_email without explicit user approval. This is non-negotiable.
     
     RESPONSE RULES (STRICT):
     - NEVER generate base64-encoded images. NEVER include "data:image" in your response.

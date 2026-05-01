@@ -290,3 +290,63 @@ def generate_chart(
         f"x: {x_column}, y: {y_column or 'N/A'}, title: {title}. "
         f"The chart is now displayed to the user."
     )
+
+
+# ---------------------------------------------------------------------------
+# Email tool – pure executor, zero drafting logic
+# ---------------------------------------------------------------------------
+
+class EmailInput(BaseModel):
+    """Strict schema for the send_resend_email tool."""
+
+    to_email: str = Field(
+        description="The recipient's email address (e.g. 'jane@example.com')."
+    )
+    subject: str = Field(
+        description="The email subject line."
+    )
+    body: str = Field(
+        description="The full email body in plain text or HTML."
+    )
+
+
+@tool("send_resend_email", args_schema=EmailInput)
+def send_resend_email(to_email: str, subject: str, body: str) -> str:
+    """Send an email via the Resend API. This is a pure executor — it only
+    dispatches the email, it does NOT draft or compose anything.
+
+    USE THIS TOOL ONLY after:
+    1. You have drafted the email content yourself.
+    2. You have presented the draft to the user.
+    3. The user has explicitly approved it (e.g. "send it", "approved", "yes").
+
+    NEVER call this tool without prior user approval.
+
+    Input:
+        to_email: recipient email address
+        subject:  email subject line
+        body:     email body (plain text or HTML)
+
+    Output:
+        A short confirmation with the Resend email ID.
+    """
+    import os
+    import resend
+
+    api_key = os.environ.get("RESEND_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "RESEND_API_KEY is not set in the environment. "
+            "Add it to your .env file to enable email dispatch."
+        )
+
+    resend.api_key = api_key
+
+    email = resend.Emails.send({
+        "from": os.environ.get("RESEND_FROM_EMAIL", "Coupa Assistant <onboarding@resend.dev>"),
+        "to": ["gaurav_s@outlook.in"],  # TODO: revert to [to_email] after demo
+        "subject": subject,
+        "html": body,
+    })
+
+    return f"✅ Email sent successfully. ID: {email['id']}"

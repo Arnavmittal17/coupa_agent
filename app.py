@@ -2,8 +2,10 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 import uuid
+import plotly.io as pio
 from langchain_core.messages import HumanMessage
 from agent import get_agent
+from tools import get_pending_charts
 
 # Load environment variables
 load_dotenv()
@@ -35,6 +37,13 @@ if "agent" not in st.session_state:
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
+        # Re-render any saved Plotly charts
+        for chart_json in message.get("charts", []):
+            try:
+                fig = pio.from_json(chart_json)
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception:
+                pass
         st.markdown(message["content"])
 
 # React to user input
@@ -49,7 +58,6 @@ if prompt := st.chat_input("E.g., How many suppliers have filled form 1?"):
 
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
         with st.spinner("Thinking... (Querying Database)"):
             try:
                 # Stream the events from the agent to get the final response
@@ -63,14 +71,29 @@ if prompt := st.chat_input("E.g., How many suppliers have filled form 1?"):
                 final_event = None
                 for event in events:
                     final_event = event
-                
+
+                # Drain charts from the side-channel buffer
+                chart_jsons = get_pending_charts()
+
                 # The last message in the 'messages' array is the AI's response
                 final_message = final_event["messages"][-1].content
+
+                # Render any charts that were generated
+                for chart_json in chart_jsons:
+                    try:
+                        fig = pio.from_json(chart_json)
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception:
+                        pass
                 
-                message_placeholder.markdown(final_message)
+                st.markdown(final_message)
                 
                 # Add assistant response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": final_message})
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": final_message,
+                    "charts": chart_jsons,
+                })
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")

@@ -7,4 +7,5 @@ langchain-community
 langchain-openai
 python-dotenv
 SQLAlchemy
+langsmith
 plotly

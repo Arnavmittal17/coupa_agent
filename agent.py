@@ -37,6 +37,11 @@ def get_agent():
     You have access to a SQLite database containing supplier, onboarding, and forms data.
     The main tables typically include 'maintable', 'csp', 'form_1_intake', 'form_2_input', 'form_3_tax'.
     There is also an 'annotations' table which explains what the columns in these tables mean and how they relate.
+
+    TABLE SELECTION GUIDE:
+    - `maintable`: Use this table for questions about "Supplier Requests", "Onboarding", "Forms", "Approvals", or the pipeline of creating/updating a supplier.
+    - `csp`: Use this table for questions about "Onboarded Suppliers", "All Suppliers", or general supplier info (contact, email, address, active status) for suppliers that are already onboarded in the central portal.
+    - `form_1_intake`, `form_2_input`, `form_3_tax`: Use these tables for detailed questions about specific forms, rejections, comments, or supplier owners.
     
     DATABASE DATETIME FORMAT:
     All date/datetime columns in this database are stored as TEXT in the format 'YYYY-MM-DD HH:MM:SS' (e.g. '2025-04-30 14:22:00').

@@ -1,156 +1,3 @@
-# import streamlit as st
-# from dotenv import load_dotenv
-# import os
-# import uuid
-# from langchain_core.messages import HumanMessage
-# from agent import get_agent
-
-# # Load environment variables
-# load_dotenv()
-
-# # Streamlit Page Config
-# st.set_page_config(page_title="Coupa Data Assistant", page_icon="📊", layout="wide")
-
-# # Custom UI adjustments
-# st.markdown("""
-# <style>
-#     .trace-btn {
-#         display: inline-block;
-#         padding: 0.5em 1em;
-#         background-color: #0091DA;
-#         color: white !important;
-#         text-decoration: none;
-#         border-radius: 4px;
-#         font-weight: bold;
-#         text-align: center;
-#         width: 100%;
-#         margin-top: 10px;
-#     }
-#     .trace-btn:hover {
-#         background-color: #005eb8;
-#         color: white !important;
-#     }
-    
-#     /* User Chat Message Styling */
-#     [data-testid="stChatMessage"]:has(.user-msg) {
-#         background-color: #0091DA !important;
-#         border-radius: 10px;
-#         color: white !important;
-#     }
-#     [data-testid="stChatMessage"]:has(.user-msg) [data-testid="stMarkdownContainer"] p {
-#         color: white !important;
-#     }
-    
-#     /* Sidebar Styling */
-#     [data-testid="stSidebar"] {
-#         background-color: #00338D !important;
-#     }
-#     [data-testid="stSidebar"] * {
-#         color: white !important;
-#     }
-# </style>
-# """, unsafe_allow_html=True)
-
-# with st.sidebar:
-#     # Logo
-#     try:
-#         st.image("logo.png", width=150)
-#     except FileNotFoundError:
-#         st.markdown("<h2 style='color: white;'>KPMG</h2>", unsafe_allow_html=True)
-        
-#     st.markdown("---")
-    
-#     # New Chat Button
-#     if st.button("➕ New Chat", use_container_width=True, type="primary"):
-#         st.session_state.thread_id = str(uuid.uuid4())
-#         st.session_state.messages = []
-#         if "agent" in st.session_state:
-#             del st.session_state.agent
-#         st.rerun()
-        
-#     st.markdown("---")
-#     st.markdown("<h3 style='color: white;'>LangSmith Traceability</h3>", unsafe_allow_html=True)
-#     langsmith_url = "https://smith.langchain.com/"
-#     st.markdown(f'<a href="{langsmith_url}" target="_blank" class="trace-btn">🔍 View Traces</a>', unsafe_allow_html=True)
-    
-#     st.markdown("---")
-#     st.markdown("<h3 style='color: white;'>System Status</h3>", unsafe_allow_html=True)
-#     # LangSmith Integration Status
-#     langsmith_api_key = os.environ.get("LANGCHAIN_API_KEY")
-#     if os.environ.get("LANGCHAIN_TRACING_V2") == "true" and langsmith_api_key and langsmith_api_key != "your_langchain_api_key_here":
-#         st.success("✅ LangSmith Tracking: Active")
-#     else:
-#         st.warning("⚠️ LangSmith Inactive. Add `LANGCHAIN_API_KEY` and `LANGCHAIN_TRACING_V2=true` to `.env`")
-
-# st.title("📊 Coupa Data Assistant")
-# st.write("Ask questions about the Coupa supplier and forms data!")
-
-# # Check API Key
-# api_key = os.environ.get("OPENAI_API_KEY")
-# if not api_key or api_key == "your_openai_api_key_here":
-#     st.warning("⚠️ Please set your OPENAI_API_KEY in the `.env` file to continue.")
-#     st.stop()
-
-# # Initialize session state variables
-# if "thread_id" not in st.session_state:
-#     st.session_state.thread_id = str(uuid.uuid4())
-
-# if "messages" not in st.session_state:
-#     st.session_state.messages = []
-
-# # We store the agent in session state so the MemorySaver checkpointer is preserved across Streamlit reruns.
-# if "agent" not in st.session_state:
-#     with st.spinner("Initializing Agent..."):
-#         st.session_state.agent = get_agent()
-
-# # Display chat messages from history on app rerun
-# for message in st.session_state.messages:
-#     with st.chat_message(message["role"]):
-#         if message["role"] == "user":
-#             st.markdown(f'<div class="user-msg">{message["content"]}</div>', unsafe_allow_html=True)
-#         else:
-#             st.markdown(message["content"])
-
-# # React to user input
-# if prompt := st.chat_input("E.g., How many suppliers have filled form 1?"):
-#     # Display user message in chat message container
-#     with st.chat_message("user"):
-#         st.markdown(f'<div class="user-msg">{prompt}</div>', unsafe_allow_html=True)
-#     # Add user message to chat history
-#     st.session_state.messages.append({"role": "user", "content": prompt})
-
-#     # Prepare configuration for LangGraph (this ties the conversation history to the thread)
-#     config = {"configurable": {"thread_id": st.session_state.thread_id}}
-
-#     # Display assistant response in chat message container
-#     with st.chat_message("assistant"):
-#         message_placeholder = st.empty()
-#         with st.spinner("Thinking... (Querying Database)"):
-#             try:
-#                 # Stream the events from the agent to get the final response
-#                 events = st.session_state.agent.stream(
-#                     {"messages": [("user", prompt)]},
-#                     config=config,
-#                     stream_mode="values"
-#                 )
-                
-#                 # Consume the stream to get the final state
-#                 final_event = None
-#                 for event in events:
-#                     final_event = event
-                
-#                 # The last message in the 'messages' array is the AI's response
-#                 final_message = final_event["messages"][-1].content
-                
-#                 message_placeholder.markdown(final_message)
-                
-#                 # Add assistant response to chat history
-#                 st.session_state.messages.append({"role": "assistant", "content": final_message})
-                
-#             except Exception as e:
-#                 st.error(f"An error occurred: {e}")
-
-
 import streamlit as st
 from dotenv import load_dotenv
 import os
@@ -458,65 +305,102 @@ suggestions = [
     {"text": "Give me a summary of all form submissions"}
 ]
 
+# Friendly labels for tool status indicators
+_TOOL_STATUS = {
+    "sql_db_list_tables": ("🔍", "Discovering tables..."),
+    "sql_db_schema":      ("📋", "Reading table schema..."),
+    "sql_db_query":       ("⚡", "Running SQL query..."),
+    "sql_db_query_checker": ("✅", "Validating query..."),
+    "generate_chart":     ("📊", "Generating chart..."),
+    "send_resend_email":  ("📧", "Sending email..."),
+}
+
 # Function to handle messages
 def handle_message(prompt: str):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     # Display user message
     with st.chat_message("user"):
         st.markdown(f'<div class="user-bubble fade-in">{prompt}</div>', unsafe_allow_html=True)
-    
+
     # Prepare configuration for LangGraph
     config = {"configurable": {"thread_id": st.session_state.thread_id}}
-    
-    # Get AI response
+
+    # Get AI response with streaming
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        with st.spinner("🤔 Analyzing data..."):
-            try:
-                # Stream the events from the agent
-                events = st.session_state.agent.stream(
-                    {"messages": [("user", prompt)]},
-                    config=config,
-                    stream_mode="values"
-                )
-                
-                # Consume the stream to get the final state
-                final_event = None
-                for event in events:
-                    final_event = event
+        # Status placeholder for tool activity indicators
+        status_placeholder = st.empty()
+        # Container for the streamed text response
+        response_container = st.empty()
 
-                # Drain charts from the side-channel buffer
-                chart_jsons = get_pending_charts()
+        collected_tokens: list[str] = []
 
-                # The last message in the 'messages' array is the AI's response
-                final_message = final_event["messages"][-1].content
+        try:
+            for msg, _metadata in st.session_state.agent.stream(
+                {"messages": [("user", prompt)]},
+                config=config,
+                stream_mode="messages",
+            ):
+                msg_type = type(msg).__name__
 
-                # Render any charts that were generated
-                for chart_json in chart_jsons:
-                    try:
-                        fig = pio.from_json(chart_json)
-                        st.plotly_chart(fig, use_container_width=True)
-                    except Exception:
-                        pass
-                
-                # Format the response
-                final_message = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', final_message)
-                
-                message_placeholder.markdown(f'<div class="ai-bubble fade-in">{final_message}</div>', unsafe_allow_html=True)
-                
-                # Add assistant response to chat history
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": final_message,
-                    "charts": chart_jsons,
-                })
-                
-            except Exception as e:
-                error_msg = f"❌ Error: {str(e)}"
-                message_placeholder.error(error_msg)
-                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                if msg_type == "AIMessageChunk":
+                    tool_calls = getattr(msg, "tool_calls", [])
+
+                    if tool_calls:
+                        # Show a status indicator for the tool being invoked
+                        for tc in tool_calls:
+                            tc_name = tc.get("name", "")
+                            if tc_name:
+                                icon, label = _TOOL_STATUS.get(
+                                    tc_name, ("⏳", f"Running {tc_name}...")
+                                )
+                                status_placeholder.info(f"{icon}  {label}")
+                    else:
+                        # Stream the AI text token-by-token
+                        token = getattr(msg, "content", "")
+                        if token:
+                            # Clear tool status once text starts flowing
+                            status_placeholder.empty()
+                            collected_tokens.append(token)
+                            response_container.markdown("".join(collected_tokens) + "▌")
+
+                elif msg_type == "ToolMessage":
+                    # Tool finished — update status briefly
+                    name = getattr(msg, "name", "")
+                    icon, label = _TOOL_STATUS.get(name, ("✅", ""))
+                    if label:
+                        done_label = label.replace("...", " ✓")
+                        status_placeholder.success(f"{icon}  {done_label}")
+
+            # Clear any remaining status
+            status_placeholder.empty()
+
+            # Final response text (remove cursor)
+            final_text = "".join(collected_tokens)
+            response_container.markdown(final_text)
+
+            # Drain charts from the side-channel buffer
+            chart_jsons = get_pending_charts()
+            for chart_json in chart_jsons:
+                try:
+                    fig = pio.from_json(chart_json)
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception:
+                    pass
+
+            # Save to chat history
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": final_text,
+                "charts": chart_jsons,
+            })
+
+        except Exception as e:
+            status_placeholder.empty()
+            error_msg = f"❌ Error: {str(e)}"
+            response_container.error(error_msg)
+            st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
 # ===== MAIN CONTENT AREA =====
 
@@ -550,8 +434,7 @@ for message in st.session_state.messages:
                 except Exception:
                     pass
             # Format assistant response
-            formatted = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', content)
-            st.markdown(f'<div class="ai-bubble fade-in">{formatted}</div>', unsafe_allow_html=True)
+            st.markdown(content)
 
 # Accept user input
 if prompt := st.chat_input("💬 Ask about Coupa data... (e.g., 'How many suppliers filled form 1?')"):

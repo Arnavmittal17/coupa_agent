@@ -542,9 +542,16 @@ for message in st.session_state.messages:
         if role == "user":
             st.markdown(f'<div class="user-bubble fade-in">{content}</div>', unsafe_allow_html=True)
         else:
+            # Re-render any saved Plotly charts
+            for chart_json in message.get("charts", []):
+                try:
+                    fig = pio.from_json(chart_json)
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception:
+                    pass
             # Format assistant response
-            content = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', content)
-            st.markdown(f'<div class="ai-bubble fade-in">{content}</div>', unsafe_allow_html=True)
+            formatted = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', content)
+            st.markdown(f'<div class="ai-bubble fade-in">{formatted}</div>', unsafe_allow_html=True)
 
 # Accept user input
 if prompt := st.chat_input("💬 Ask about Coupa data... (e.g., 'How many suppliers filled form 1?')"):

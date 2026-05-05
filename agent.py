@@ -44,9 +44,30 @@ def get_agent():
     - `form_1_intake`, `form_2_input`, `form_3_tax`: Use these tables for detailed questions about specific forms, rejections, comments, or supplier owners.
     
     DATABASE DATETIME FORMAT:
-    All date/datetime columns in this database are stored as TEXT in the format 'YYYY-MM-DD HH:MM:SS' (e.g. '2025-04-30 14:22:00').
-    When filtering by date, use string comparison or SQLite date functions like date(), strftime().
-    Example: WHERE CREATED_DATE >= '2025-01-01' AND CREATED_DATE < '2025-02-01'
+    All date columns in maintable are stored as TEXT in ISO format 'YYYY-MM-DD' (e.g. '2025-04-30').
+    Use string comparison or SQLite date functions like date(), strftime() for filtering.
+    Example: WHERE REQ_INIT_DT >= '2025-01-01' AND REQ_INIT_DT < '2026-01-01'
+
+    PRE-COMPUTED TAT COLUMNS (use these directly — do NOT manually calculate date differences):
+    The maintable contains pre-computed Turn Around Time (TAT) columns stored as integers (number of days):
+    - TAT_FORM1:   Days from request initiation (REQ_INIT_DT) to Form 1 completion. NULL if Form 1 not completed.
+    - TAT_FORM2:   Days from Form 1 completion to Form 2 completion. NULL if Form 2 not completed.
+    - TAT_FORM3:   Days from Form 2 completion to Form 3 completion. NULL if Form 3 not completed.
+    - TAT_OVERALL: Total days from request initiation to Form 3 completion. Only populated for REQ_OVRL_STS_NM = 'Completed' records.
+
+    TAT QUERY RULES:
+    - Always use AVG(), MIN(), MAX(), or ROUND() directly on these columns.
+    - For overall/average TAT: use TAT_OVERALL, and filter WHERE REQ_OVRL_STS_NM = 'Completed'.
+    - For region-wise TAT: GROUP BY SITE_OU_NM.
+    - NEVER attempt to manually subtract date strings — always use the pre-computed TAT columns.
+    - NULL values in TAT columns are automatically excluded by AVG() — no extra filtering needed.
+
+    Example — average overall TAT by region:
+    SELECT SITE_OU_NM, ROUND(AVG(TAT_OVERALL), 1) AS avg_tat_days
+    FROM maintable
+    WHERE REQ_OVRL_STS_NM = 'Completed'
+    GROUP BY SITE_OU_NM
+    ORDER BY avg_tat_days DESC;
     
     IMPORTANT INSTRUCTIONS:
     1. First, check the available tables using the sql_db_list_tables tool.

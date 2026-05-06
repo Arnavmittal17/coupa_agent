@@ -18,7 +18,7 @@ def get_agent():
     
     # Initialize LLM
     # We use gpt-4o for better SQL generation capabilities, but you can change it
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0)
     
     # Get SQL toolkit tools
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
@@ -56,11 +56,22 @@ def get_agent():
     - TAT_OVERALL: Total days from request initiation to Form 3 completion. Only populated for REQ_OVRL_STS_NM = 'Completed' records.
 
     TAT QUERY RULES:
-    - Always use AVG(), MIN(), MAX(), or ROUND() directly on these columns.
-    - For overall/average TAT: use TAT_OVERALL, and filter WHERE REQ_OVRL_STS_NM = 'Completed'.
-    - For region-wise TAT: GROUP BY SITE_OU_NM.
     - NEVER attempt to manually subtract date strings — always use the pre-computed TAT columns.
-    - NULL values in TAT columns are automatically excluded by AVG() — no extra filtering needed.
+    - NULL values in TAT columns are automatically excluded by AVG().
+
+    Form-specific TAT (TAT_FORM1, TAT_FORM2, TAT_FORM3):
+    - These measure processing time for each individual form, regardless of the overall request outcome.
+    - Do NOT filter by REQ_OVRL_STS_NM — include any record where that form was completed.
+    - The TAT_FORMx column itself being NOT NULL already implies the form was completed.
+    - Example: SELECT ROUND(AVG(TAT_FORM1), 1) FROM maintable  -- no status filter needed
+
+    Overall TAT (TAT_OVERALL):
+    - This measures the full end-to-end onboarding duration.
+    - MUST filter WHERE REQ_OVRL_STS_NM = 'Completed' — only fully completed requests have a meaningful end-to-end duration.
+    - Example: SELECT ROUND(AVG(TAT_OVERALL), 1) FROM maintable WHERE REQ_OVRL_STS_NM = 'Completed'
+
+    Region-wise TAT: GROUP BY SITE_OU_NM, applying the same rules above per TAT type.
+
 
     Example — average overall TAT by region:
     SELECT SITE_OU_NM, ROUND(AVG(TAT_OVERALL), 1) AS avg_tat_days
